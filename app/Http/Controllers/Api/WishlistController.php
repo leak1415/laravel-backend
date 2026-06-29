@@ -7,6 +7,7 @@ use App\Http\Resources\WishlistResource;
 use App\Models\Wishlist;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class WishlistController extends Controller
 {
@@ -21,7 +22,12 @@ class WishlistController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate(['product_id' => 'required|exists:products,id']);
+        $request->validate([
+            'product_id' => [
+                'required',
+                Rule::exists('products', 'id')->where('is_active', true),
+            ],
+        ]);
 
         $wishlist = Wishlist::firstOrCreate([
             'user_id' => $request->user()->id,

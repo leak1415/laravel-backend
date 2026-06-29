@@ -19,6 +19,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_admin' => false,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -38,6 +39,12 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Invalid credentials',
             ], 401);
+        }
+
+        if ($user->is_admin) {
+            return response()->json([
+                'message' => 'Admin accounts must use the admin login page.',
+            ], 403);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

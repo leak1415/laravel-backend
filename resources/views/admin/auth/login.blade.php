@@ -15,6 +15,7 @@
                         <h4>Admin Login</h4>
                     </div>
                     <div class="card-body">
+                        <p class="text-muted small mb-3">Admin only. Customer accounts should use the storefront login page.</p>
                         @if ($errors->any())
                             <div class="alert alert-danger">{{ $errors->first('email') }}</div>
                         @endif

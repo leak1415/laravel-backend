@@ -23,15 +23,16 @@ class CartController extends Controller
 
     public function store(AddToCartRequest $request): JsonResponse
     {
-        $cart = Cart::updateOrCreate(
-            [
-                'user_id' => $request->user()->id,
-                'product_id' => $request->product_id,
-            ],
-            [
-                'quantity' => $request->quantity,
-            ]
-        );
+        $cart = Cart::firstOrNew([
+            'user_id' => $request->user()->id,
+            'product_id' => $request->product_id,
+        ]);
+
+        $cart->quantity = $cart->exists
+            ? $cart->quantity + $request->quantity
+            : $request->quantity;
+
+        $cart->save();
 
         $cart->load('product.category');
 

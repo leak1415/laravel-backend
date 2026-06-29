@@ -20,7 +20,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt(array_merge($credentials, ['is_admin' => true]))) {
             $request->session()->regenerate();
             return redirect()->route('admin.dashboard');
         }

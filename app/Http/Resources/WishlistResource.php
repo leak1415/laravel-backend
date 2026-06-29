@@ -12,7 +12,7 @@ class WishlistResource extends JsonResource
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
-            'product' => new ProductResource($this->whenLoaded('product')),
+            'product' => $this->whenLoaded('product', fn () => new ProductResource($this->product)),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

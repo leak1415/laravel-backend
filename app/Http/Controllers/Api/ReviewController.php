@@ -35,6 +35,9 @@ class ReviewController extends Controller
 
     public function productReviews(Product $product): JsonResponse
     {
+        $product->loadMissing('category');
+        abort_unless($product->is_active && $product->category && $product->category->is_active, 404);
+
         $reviews = Review::with('user')
             ->where('product_id', $product->id)
             ->orderBy('created_at', 'desc')
