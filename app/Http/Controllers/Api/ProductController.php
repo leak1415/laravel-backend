@@ -21,18 +21,22 @@ class ProductController extends Controller
             ->withAvg('reviews', 'rating');
     }
 
+    /**
+     * Display a listing of products.
+     */
     public function index(Request $request): JsonResponse
     {
         $query = $this->baseQuery();
 
         if ($request->filled('category_id')) {
-            $query->where('category_id', $request->input('category_id'));
+            $query->where('category_id', $request->category_id);
         }
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function (Builder $searchQuery) use ($search) {
-                $searchQuery->where('name', 'like', "%{$search}%")
+            $search = $request->search;
+
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
                     ->orWhere('short_description', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
@@ -52,24 +56,99 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * Store a newly created product.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:products,slug',
+            'sku' => 'required|string|max:100|unique:products,sku',
+            'short_description' => 'nullable|string',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
+            'image' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $product = Product::create($validated);
+
+        return response()->json(new ProductResource($product), 201);
+    }
+
+    /**
+     * Display a single product.
+     */
     public function show(Product $product): JsonResponse
     {
-        $product->load(['category' => fn ($relation) => $relation->where('is_active', true), 'reviews.user']);
+        $product->load([
+            'category' => fn ($query) => $query->where('is_active', true),
+            'reviews.user'
+        ]);
+
         abort_unless($product->is_active && $product->category, 404);
-        $product->loadCount('reviews')->loadAvg('reviews', 'rating');
+
+        $product->loadCount('reviews')
+            ->loadAvg('reviews', 'rating');
 
         return response()->json(new ProductResource($product));
     }
 
+    /**
+     * Update a product.
+     */
+    public function update(Request $request, Product $product): JsonResponse
+    {
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:products,slug,' . $product->id,
+            'sku' => 'required|string|max:100|unique:products,sku,' . $product->id,
+            'short_description' => 'nullable|string',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
+            'image' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $product->update($validated);
+
+        return response()->json(new ProductResource($product));
+    }
+
+    /**
+     * Delete a product.
+     */
+    public function destroy(Product $product): JsonResponse
+    {
+        $product->delete();
+
+        return response()->json([
+            'message' => 'Product deleted successfully'
+        ]);
+    }
+
+    /**
+     * Search products.
+     */
     public function search(Request $request): JsonResponse
     {
-        $request->validate(['q' => 'required|string|max:255']);
+        $request->validate([
+            'q' => 'required|string|max:255'
+        ]);
 
         $query = $this->baseQuery();
-        $search = $request->input('q');
 
-        $query->where(function (Builder $searchQuery) use ($search) {
-            $searchQuery->where('name', 'like', "%{$search}%")
+        $search = $request->q;
+
+        $query->where(function (Builder $q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
                 ->orWhere('short_description', 'like', "%{$search}%")
                 ->orWhere('description', 'like', "%{$search}%")
                 ->orWhere('sku', 'like', "%{$search}%");
