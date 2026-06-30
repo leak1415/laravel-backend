@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
-use Illuminate\Http\JsonResponse;
 
 class CategoryController extends Controller
 {
-    public function index(): JsonResponse
+    /**
+     * Get all active categories
+     */
+    public function index()
     {
         $categories = Category::query()
             ->where('is_active', true)
@@ -19,6 +21,18 @@ class CategoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        return response()->json(CategoryResource::collection($categories));
+        return CategoryResource::collection($categories);
+    }
+
+    /**
+     * Get single category
+     */
+    public function show(Category $category)
+    {
+        $category->loadCount([
+            'products' => fn ($query) => $query->where('is_active', true),
+        ]);
+
+        return new CategoryResource($category);
     }
 }

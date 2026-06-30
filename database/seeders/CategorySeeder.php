@@ -20,9 +20,12 @@ class CategorySeeder extends Seeder
 
         foreach ($categories as $category) {
             Category::create([
+                'parent_id' => null,
                 'name' => $category['name'],
                 'slug' => Str::slug($category['name']),
                 'description' => $category['description'],
+                'image' => null,
+                'is_active' => true,
             ]);
         }
     }
